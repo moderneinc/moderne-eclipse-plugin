@@ -4,6 +4,7 @@ Bundle-Name: Moderne
 Bundle-SymbolicName: moderne-eclipse-plugin;singleton:=true
 Bundle-Version: 0.1.0
 Bundle-Vendor: Moderne, Inc.
-Require-Bundle: org.eclipse.ui
+Require-Bundle: org.eclipse.ui,
+ org.eclipse.jdt.core;bundle-version="3.24.0"
 Automatic-Module-Name: modenre.eclipse.plugin
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
