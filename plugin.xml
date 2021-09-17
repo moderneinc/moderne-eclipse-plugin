@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+
+   <extension
+         point="org.eclipse.ui.commands">
+      <category
+            id="io.moderne.commands.category"
+            name="Moderne">
+      </category>
+      <command
+            categoryId="io.moderne.commands.category"
+            name="Find Usages on Moderne"
+            id="io.moderne.commands.findUsages">
+      </command>
+   </extension>
+   <extension
+         point="org.eclipse.ui.handlers">
+      <handler
+            class="io.moderne.eclipse.ModerneHandler"
+            commandId="io.moderne.commands.findUsages">
+      </handler>
+   </extension>
+   <extension
+         point="org.eclipse.ui.bindings">
+      <key
+            commandId="io.moderne.commands.findUsages"
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+            contextId="org.eclipse.ui.contexts.window"
+            sequence="M1+6">
+      </key>
+   </extension>
+   <extension
+         point="org.eclipse.ui.menus">
+      <menuContribution
+            locationURI="popup:org.eclipse.ui.popup.any">
+         <command
+               commandId="io.moderne.commands.findUsages"
+               id="io.moderne.menus.findUsages"
+               label="Find usages on Moderne"
+               mnemonic="F">
+         </command>
+      </menuContribution>
+   </extension>
+
+</plugin>
