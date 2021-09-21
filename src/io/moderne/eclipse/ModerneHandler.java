@@ -5,20 +5,18 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.StringJoiner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.jdt.core.IField;
 import org.eclipse.jdt.core.IJavaElement;
-import org.eclipse.jdt.core.ILocalVariable;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
-import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.internal.ui.actions.SelectionConverter;
 import org.eclipse.jdt.internal.ui.javaeditor.JavaEditor;
 import org.eclipse.jface.text.ITextSelection;
@@ -77,8 +75,21 @@ public class ModerneHandler extends AbstractHandler {
 			IMethod method = (IMethod) target;
 			try {
 				String params = SignatureResolver.getParameters(method);
+				params = Arrays.stream(params.split(";"))
+						.map(p -> {
+							while(p.startsWith("[")) {
+								p = p.substring(1) + "[]";
+							}
+							return p;
+						})
+						.map(p -> p.replaceAll("^L", ""))
+						.map(p -> p.replace("/", "."))
+						.map(p -> p.replace("$", "."))
+						.collect(Collectors.joining(","));
+				
+				String name = method.isConstructor() ? "<constructor>" : method.getElementName();
 				String methodPattern = method.getDeclaringType().getFullyQualifiedName() + " " +
-						method.getElementName() + "(" + params + ")";
+						name + "(" + params + ")";
 				request = String.format(FIND_METHODS, methodPattern);
 			} catch (JavaModelException e) {
 				return null;

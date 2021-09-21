@@ -1,103 +1,140 @@
 package io.moderne.eclipse;
 
-import java.util.StringJoiner;
-
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeParameter;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.Signature;
 
-// Modified from https://github.com/eclipse/eclemma/blob/master/org.eclipse.eclemma.core/src/org/eclipse/eclemma/internal/core/analysis/SignatureResolver.java
-// See https://bugs.eclipse.org/bugs/show_bug.cgi?id=502563
+//Modified from https://github.com/eclipse/eclemma/blob/master/org.eclipse.eclemma.core/src/org/eclipse/eclemma/internal/core/analysis/SignatureResolver.java
+//See https://bugs.eclipse.org/bugs/show_bug.cgi?id=502563
 
-public class SignatureResolver {
-	private SignatureResolver() {
-	}
-	
-	public static String getParameters(String signature) {
-		int pos = signature.lastIndexOf(')');
+/**
+ * Utility to get a resolved binary signature from a given method.
+ */
+public final class SignatureResolver {
+	private static final String EMPTY = ""; //$NON-NLS-1$
+
+	private static final String OBJECT = "Ljava/lang/Object;"; //$NON-NLS-1$
+
+	private static final char SLASH = '/';
+
+	/**
+	 * Extracts the parameter part from the given signature, i.e. the substring
+	 * contained in braces.
+	 *
+	 * @param signature method signature
+	 * @return parameter part only
+	 */
+	public static String getParameters(final String signature) {
+		final int pos = signature.lastIndexOf(')');
 		// avoid String instances for methods without parameters
-		return pos == 1 ? "" : signature.substring(1, pos);
+		return pos == 1 ? EMPTY : signature.substring(1, pos);
 	}
 
-	public static String getParameters(IMethod method) throws JavaModelException {
+	/**
+	 * Extracts the resolved binary parameters from the given method
+	 *
+	 * @param method method to resolve
+	 * @return binary parameter specification
+	 */
+	public static String getParameters(final IMethod method) throws JavaModelException {
 		if (method.isBinary()) {
 			return getParameters(method.getSignature());
 		}
-		StringJoiner types = new StringJoiner(",");
-		String[] parameterTypes = method.getParameterTypes();
-		for (String t : parameterTypes) {
-			StringBuilder type = new StringBuilder();
-			int arrayCount = Signature.getArrayCount(t);
-			type.append(resolveParameterType(method, t.substring(arrayCount)));
-			for (int i = 0; i < arrayCount; i++) {
-				type.append("[]");
-			}
-			types.add(type.toString());
+		final StringBuilder buffer = new StringBuilder();
+		final String[] parameterTypes = method.getParameterTypes();
+		for (final String t : parameterTypes) {
+			resolveArrayParameterType(method, t, buffer);
 		}
-		return types.toString();
+		return buffer.toString();
 	}
 
-	private static String resolveParameterType(IMethod method, String parameterType)
-			throws JavaModelException {
-		char kind = parameterType.charAt(0);
+	private static final void resolveArrayParameterType(final IMethod method, final String parameterType,
+			final StringBuilder result) throws JavaModelException {
+		final int arrayCount = Signature.getArrayCount(parameterType);
+		for (int i = 0; i < arrayCount; i++) {
+			result.append(Signature.C_ARRAY);
+		}
+		resolveParameterType(method, parameterType.substring(arrayCount), result);
+	}
+
+	private static final void resolveParameterType(final IMethod method, final String parameterType,
+			final StringBuilder result) throws JavaModelException {
+		final char kind = parameterType.charAt(0);
 		switch (kind) {
 		case Signature.C_UNRESOLVED:
-			String identifier = parameterType.substring(1, parameterType.length() - 1);
-			String type;
-			if ((type = resolveType(method.getDeclaringType(), identifier)) != null) {
-				return type;
+			final String identifier = parameterType.substring(1, parameterType.length() - 1);
+			if (resolveType(method.getDeclaringType(), identifier, result)) {
+				return;
 			}
-			if ((type = resolveTypeParameter(method, identifier)) != null) {
-				return type;
+			if (resolveTypeParameter(method, identifier, result)) {
+				return;
 			}
 			break;
 		}
-		return parameterType;
+		result.append(parameterType);
 	}
 
-	private static String resolveType(IType scope, String identifier) throws JavaModelException {
-		String[][] types = scope.resolveType(Signature.getTypeErasure(identifier));
+	private static final boolean resolveType(final IType scope, final String identifier, final StringBuilder result)
+			throws JavaModelException {
+		final String[][] types = scope.resolveType(Signature.getTypeErasure(identifier));
 		if (types == null || types.length != 1) {
-			return null;
+			return false;
 		}
-		
-		StringBuilder type = new StringBuilder();
-		String qualifier = types[0][0];
+		result.append(Signature.C_RESOLVED);
+		final String qualifier = types[0][0];
 		if (qualifier.length() > 0) {
-			type.append(qualifier).append('.');
+			replace(qualifier, Signature.C_DOT, SLASH, result);
+			result.append(SLASH);
 		}
-		type.append(types[0][1]);
-		return type.toString();
+		replace(types[0][1], Signature.C_DOT, Signature.C_DOLLAR, result);
+		result.append(Signature.C_SEMICOLON);
+		return true;
 	}
 
-	private static String resolveTypeParameter(IMethod method, String identifier) throws JavaModelException {
-		String typeParam;
+	private static final boolean resolveTypeParameter(final IMethod method, final String identifier,
+			final StringBuilder result) throws JavaModelException {
 		IType type = method.getDeclaringType();
-		if ((typeParam = resolveTypeParameter(type, method.getTypeParameters(), identifier)) != null) {
-			return typeParam;
+		if (resolveTypeParameter(type, method.getTypeParameters(), identifier, result)) {
+			return true;
 		}
 		while (type != null) {
-			if ((typeParam = resolveTypeParameter(type, type.getTypeParameters(), identifier)) != null) {
-				return typeParam;
+			if (resolveTypeParameter(type, type.getTypeParameters(), identifier, result)) {
+				return true;
 			}
 			type = type.getDeclaringType();
 		}
-		return null;
+		return false;
 	}
 
-	private static String resolveTypeParameter(IType context, ITypeParameter[] typeParameters, String identifier) throws JavaModelException {
-		for (ITypeParameter p : typeParameters) {
+	private static final boolean resolveTypeParameter(final IType context, final ITypeParameter[] typeParameters,
+			final String identifier, final StringBuilder result) throws JavaModelException {
+		for (final ITypeParameter p : typeParameters) {
 			if (identifier.equals(p.getElementName())) {
-				String[] bounds = p.getBounds();
+				final String[] bounds = p.getBounds();
 				if (bounds.length == 0) {
-					return "java.lang.Object";
+					result.append(OBJECT);
+					return true;
 				} else {
-					return resolveType(context, bounds[0]);
+					return resolveType(context, bounds[0], result);
 				}
 			}
 		}
-		return null;
+		return false;
 	}
+
+	private static final void replace(final String source, final char oldChar, final char newChar,
+			final StringBuilder result) {
+		final int len = source.length();
+		for (int i = 0; i < len; i++) {
+			final char c = source.charAt(i);
+			result.append(c == oldChar ? newChar : c);
+		}
+	}
+
+	private SignatureResolver() {
+		// no instances
+	}
+
 }
