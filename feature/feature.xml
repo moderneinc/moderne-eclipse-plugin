@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature
+      id="io.moderne"
+      label="Moderne"
+      version="0.1.0"
+      provider-name="Moderne, Inc.">
+
+   <description url="https://moderne.io">
+      Automatically fix, upgrade, and secure your code. Eliminate vulnerable patterns in code. Fix insecure file access, cryptographically insecure random generation, etc. Transform code to meet your chosen standards. Auto-fix Checkstyle, adopt Spring or Google Java format, etc. Manage large volumes of infrastructure as code. Standardize Kubernetes manifests, patch properties files, etc.
+   </description>
+
+   <copyright url="https://moderne.io">
+      Copyright 2021 Moderne, Inc.
+   </copyright>
+
+   <plugin
+         id="io.moderne"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+</feature>
