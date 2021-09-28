@@ -3,5 +3,8 @@
    <feature url="features/io.moderne_0.1.0.jar" id="io.moderne" version="0.1.0">
       <category name="moderne"/>
    </feature>
+   <feature url="features/io.moderne_0.1.1.jar" id="io.moderne" version="0.1.1">
+      <category name="moderne"/>
+   </feature>
    <category-def name="moderne" label="Moderne"/>
 </site>

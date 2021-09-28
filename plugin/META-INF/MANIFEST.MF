@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Moderne
 Bundle-SymbolicName: io.moderne;singleton:=true
-Bundle-Version: 0.1.0
+Bundle-Version: 0.1.1
 Bundle-Vendor: Moderne, Inc.
 Require-Bundle: org.eclipse.ui,
  org.eclipse.jdt.core;bundle-version="3.24.0",

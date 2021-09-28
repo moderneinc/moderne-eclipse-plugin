@@ -58,7 +58,7 @@ public class ModerneHandler extends AbstractHandler {
 		if(!tokenFile.toFile().exists()) {
 			try {
 				PlatformUI.getWorkbench().getBrowserSupport().getExternalBrowser()
-					.openURL(new URL("https://app.moderne.io/welcome/plugins/IntelliJ"));
+					.openURL(new URL("https://app.moderne.io/welcome/plugins/Eclipse"));
 			} catch (PartInitException | MalformedURLException e) {
 				throw new RuntimeException(e);
 			}		
